@@ -1,80 +1,31 @@
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel, EmailStr
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
+from .crud import active_users_count, can_add_user, get_active_subscription
 from .db import get_db
 from .models import Company, Plan, Subscription, User
-from .crud import can_add_user
+from .schemas import (
+    CompanyCreate,
+    CompanyCreateOut,
+    CompanyDetailOut,
+    CompanyOut,
+    CompanyUpdate,
+    CompanyUsageOut,
+    PlanCreate,
+    PlanOut,
+    SubscriptionUpdate,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
 
 app = FastAPI(title="Tool HR Backend")
 
 
 # =========================
-# Pydantic Schemas (locali a main.py)
-# =========================
-class CompanyCreate(BaseModel):
-    name: str
-    vat_number: str | None = None
-    plan_name: str = "Base"
-    seats_total: int = 3
-
-
-class CompanyOut(BaseModel):
-    id: int
-    name: str
-    vat_number: str | None
-    is_active: bool
-
-    class Config:
-        from_attributes = True
-
-
-class SubscriptionOut(BaseModel):
-    company_id: int
-    plan_id: int
-    seats_total: int
-    status: str
-
-    class Config:
-        from_attributes = True
-
-
-class PlanOut(BaseModel):
-    id: int
-    name: str
-    included_seats: int
-
-    class Config:
-        from_attributes = True
-
-
-class CompanyDetailOut(BaseModel):
-    company: CompanyOut
-    subscription: SubscriptionOut | None
-    plan: PlanOut | None
-
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    full_name: str
-    role: str = "hr_user"
-
-
-class UserOut(BaseModel):
-    id: int
-    company_id: int
-    email: EmailStr
-    full_name: str
-    role: str
-    is_active: bool
-
-    class Config:
-        from_attributes = True
-
-
-# =========================
 # Helpers DB
 # =========================
+
 def get_or_create_plan(db: Session, plan_name: str, included_seats: int) -> Plan:
     plan = db.query(Plan).filter(Plan.name == plan_name).first()
     if plan:
@@ -85,16 +36,6 @@ def get_or_create_plan(db: Session, plan_name: str, included_seats: int) -> Plan
     db.commit()
     db.refresh(plan)
     return plan
-
-
-def get_active_subscription(db: Session, company_id: int) -> Subscription | None:
-   
-    return (
-        db.query(Subscription)
-        .filter(Subscription.company_id == company_id)
-        .order_by(Subscription.id.desc())
-        .first()
-    )
 
 
 # =========================
@@ -131,7 +72,25 @@ def seed(db: Session = Depends(get_db)):
     return {"company_id": company.id, "plan": plan.name}
 
 
-@app.post("/companies")
+@app.post("/plans", response_model=PlanOut)
+def create_plan(payload: PlanCreate, db: Session = Depends(get_db)):
+    existing = db.query(Plan).filter(Plan.name == payload.name).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Plan già esistente con questo nome.")
+
+    plan = Plan(name=payload.name, included_seats=payload.included_seats)
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+@app.get("/plans", response_model=list[PlanOut])
+def list_plans(db: Session = Depends(get_db)):
+    return db.query(Plan).order_by(Plan.id.asc()).all()
+
+
+@app.post("/companies", response_model=CompanyCreateOut)
 def create_company(payload: CompanyCreate, db: Session = Depends(get_db)):
     """
     Crea una nuova azienda + subscription.
@@ -143,6 +102,11 @@ def create_company(payload: CompanyCreate, db: Session = Depends(get_db)):
 
     # piano
     plan = get_or_create_plan(db, payload.plan_name, included_seats=payload.seats_total)
+    if payload.seats_total < plan.included_seats:
+        raise HTTPException(
+            status_code=409,
+            detail="I posti non possono essere inferiori ai posti inclusi nel piano.",
+        )
 
     # company
     company = Company(name=payload.name, vat_number=payload.vat_number, is_active=True)
@@ -164,8 +128,49 @@ def create_company(payload: CompanyCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/companies", response_model=list[CompanyOut])
-def list_companies(db: Session = Depends(get_db)):
-    return db.query(Company).order_by(Company.id.asc()).all()
+def list_companies(
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+):
+    query = db.query(Company)
+    if q:
+        query = query.filter(Company.name.ilike(f"%{q}%"))
+
+    return query.order_by(Company.id.asc()).offset(offset).limit(limit).all()
+
+
+@app.patch("/companies/{company_id}", response_model=CompanyOut)
+def update_company(
+    company_id: int,
+    payload: CompanyUpdate,
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company non trovata.")
+
+    if payload.name is not None:
+        existing = (
+            db.query(Company)
+            .filter(Company.name == payload.name, Company.id != company_id)
+            .first()
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail="Company già esistente con questo nome.")
+        company.name = payload.name
+
+    if payload.vat_number is not None:
+        company.vat_number = payload.vat_number
+
+    if payload.is_active is not None:
+        company.is_active = payload.is_active
+
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+    return company
 
 
 @app.get("/companies/{company_id}", response_model=CompanyDetailOut)
@@ -179,6 +184,61 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
     if sub:
         plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
 
+    return {"company": company, "subscription": sub, "plan": plan}
+
+
+@app.get("/companies/{company_id}/usage", response_model=CompanyUsageOut)
+def get_company_usage(company_id: int, db: Session = Depends(get_db)):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company non trovata.")
+
+    seats = 0
+    sub = get_active_subscription(db, company_id)
+    if sub:
+        seats = sub.seats_total
+
+    active_users = active_users_count(db, company_id)
+    available_seats = max(seats - active_users, 0)
+    return {
+        "company_id": company_id,
+        "active_users": active_users,
+        "seats_total": seats,
+        "available_seats": available_seats,
+    }
+
+
+@app.patch("/companies/{company_id}/subscription", response_model=CompanyDetailOut)
+def update_subscription(
+    company_id: int,
+    payload: SubscriptionUpdate,
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company non trovata.")
+
+    sub = get_active_subscription(db, company_id)
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription attiva non trovata.")
+
+    if payload.seats_total is not None:
+        active_users = active_users_count(db, company_id)
+        if payload.seats_total < active_users:
+            raise HTTPException(
+                status_code=409,
+                detail="I posti non possono essere inferiori agli utenti attivi.",
+            )
+        sub.seats_total = payload.seats_total
+
+    if payload.status is not None:
+        sub.status = payload.status
+
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+
+    plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
     return {"company": company, "subscription": sub, "plan": plan}
 
 
@@ -209,8 +269,39 @@ def create_user(company_id: int, payload: UserCreate, db: Session = Depends(get_
     return user
 
 
+@app.patch("/companies/{company_id}/users/{user_id}", response_model=UserOut)
+def update_user(
+    company_id: int,
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company non trovata.")
+
+    user = db.query(User).filter(User.id == user_id, User.company_id == company_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato.")
+
+    if payload.is_active and not user.is_active:
+        if not can_add_user(db, company_id):
+            raise HTTPException(status_code=409, detail="Limite licenze raggiunto. Acquista posti aggiuntivi.")
+
+    user.is_active = payload.is_active
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @app.get("/companies/{company_id}/users", response_model=list[UserOut])
-def list_users(company_id: int, db: Session = Depends(get_db)):
+def list_users(
+    company_id: int,
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+):
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company non trovata.")
@@ -219,5 +310,7 @@ def list_users(company_id: int, db: Session = Depends(get_db)):
         db.query(User)
         .filter(User.company_id == company_id)
         .order_by(User.id.asc())
+        .offset(offset)
+        .limit(limit)
         .all()
     )

@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16
+    container_name: toolhr_postgres
+    environment:
+      POSTGRES_USER: toolhr
+      POSTGRES_PASSWORD: toolhr
+      POSTGRES_DB: toolhr
+    ports:
+      - "5432:5432"
+    volumes:
+      - toolhr_pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: toolhr_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@toolhr.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  toolhr_pgdata:

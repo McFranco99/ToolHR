@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ToolHR — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-icon">TH</span>
+          <div>
+            <h1>ToolHR</h1>
+            <p>HR platform</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a class="active" href="#">Dashboard</a>
+          <a href="#">Ricerche</a>
+          <a href="#">Candidati</a>
+          <a href="#">Analytics</a>
+          <a href="#">Impostazioni</a>
+        </nav>
+        <div class="sidebar-footer">
+          <p class="small">Status API</p>
+          <span id="api-status" class="pill warning">Connessione...</span>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div class="search">
+            <input type="search" placeholder="Cerca candidato, email, CV" />
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost">🔔</button>
+            <div class="avatar">
+              <img
+                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80"
+                alt="Profilo"
+              />
+              <span>Mario Rossi</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="grid">
+          <article class="card">
+            <div class="card-header">
+              <h2>Dashboard — Ricerche attive</h2>
+              <button class="ghost">Elenco taglia del top ▾</button>
+            </div>
+            <div class="tabs">
+              <button class="tab active">Aperte</button>
+              <button class="tab">Stand-by</button>
+              <button class="tab">Chiuse</button>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ricerca</th>
+                  <th>Stato</th>
+                  <th>Apertura</th>
+                  <th>Chiusura</th>
+                  <th>Candidature</th>
+                  <th>Criticità</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Addetti GDO Roma</td>
+                  <td><span class="badge success">Aperta</span></td>
+                  <td>12/03</td>
+                  <td>—</td>
+                  <td>87</td>
+                  <td><span class="badge danger">12 da valutare</span></td>
+                </tr>
+                <tr>
+                  <td>Magazzinieri Milano</td>
+                  <td><span class="badge success">Aperta</span></td>
+                  <td>20/03</td>
+                  <td>—</td>
+                  <td>41</td>
+                  <td><span class="badge warning">3 negativi senza OK</span></td>
+                </tr>
+                <tr>
+                  <td>Manutentori Nord</td>
+                  <td><span class="badge warning">Stand-by</span></td>
+                  <td>01/02</td>
+                  <td>—</td>
+                  <td>63</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Addetti Food Sud</td>
+                  <td><span class="badge success">Aperta</span></td>
+                  <td>05/04</td>
+                  <td>—</td>
+                  <td>19</td>
+                  <td><span class="badge danger">6 da valutare</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Analytics</p>
+                <h2>Addetti GDO Roma</h2>
+              </div>
+              <button class="primary">Rispondi al candidato</button>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <h3>87</h3>
+                <p>Offerte ricevute</p>
+              </div>
+              <div class="stat">
+                <h3>23</h3>
+                <p>Colloqui</p>
+              </div>
+              <div class="stat">
+                <h3>12</h3>
+                <p>In shortlist</p>
+              </div>
+              <div class="stat">
+                <h3>83%</h3>
+                <p>Feedback positivi</p>
+              </div>
+            </div>
+            <div class="cards-inline">
+              <div class="highlight danger">
+                <strong>22 candidature da valutare</strong>
+                <span>Da più di 5 giorni senza feedback</span>
+              </div>
+              <div class="highlight warning">
+                <strong>3 negativi senza riscontro</strong>
+                <span>In attesa di feedback</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <h2>Addetti GDO Roma</h2>
+              <div class="search small">
+                <input type="search" placeholder="Cerca nella ricerca" />
+              </div>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Stato</th>
+                  <th>Ricezione</th>
+                  <th>Fonte</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mario Rossi</td>
+                  <td><span class="badge warning">Da valutare</span></td>
+                  <td>10/04</td>
+                  <td>Indeed</td>
+                  <td><span class="badge neutral">Sogetti</span></td>
+                </tr>
+                <tr>
+                  <td>Luca Bianchi</td>
+                  <td><span class="badge danger">Da valutare</span></td>
+                  <td>02/04</td>
+                  <td>Mail</td>
+                  <td><span class="badge neutral">Macia</span></td>
+                </tr>
+                <tr>
+                  <td>Paolo Verdi</td>
+                  <td><span class="badge success">In colloquio</span></td>
+                  <td>01/04</td>
+                  <td>LinkedIn</td>
+                  <td><span class="badge neutral">Selottis</span></td>
+                </tr>
+                <tr>
+                  <td>Anna Russo</td>
+                  <td><span class="badge warning">Negative (R)</span></td>
+                  <td>28/03</td>
+                  <td>Indeed</td>
+                  <td><span class="badge warning">Feedback da inviare</span></td>
+                </tr>
+                <tr>
+                  <td>Marta Neri</td>
+                  <td><span class="badge neutral">Scartata</span></td>
+                  <td>27/03</td>
+                  <td>Indeed</td>
+                  <td><span class="badge neutral">Indeed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Profilo</p>
+                <h2>Mario Rossi</h2>
+              </div>
+              <button class="primary">Rispondi al candidato</button>
+            </div>
+            <div class="profile">
+              <div class="profile-main">
+                <div class="notes">
+                  <h3>Note screening / colloqui</h3>
+                  <textarea placeholder="Aggiungi una nota..."></textarea>
+                  <div class="timeline">
+                    <div class="timeline-item">
+                      <span class="dot"></span>
+                      <div>
+                        <p>Candidato creato</p>
+                        <span>Oggi alle 9:15</span>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <span class="dot"></span>
+                      <div>
+                        <p>Recapito in valutazione</p>
+                        <span>10/04 — da Indeed</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="recent-actions">
+                  <h3>Azioni recenti</h3>
+                  <div class="action">
+                    <span class="avatar small">
+                      <img
+                        src="https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=80&q=80"
+                        alt="Recruiter"
+                      />
+                    </span>
+                    <div>
+                      <p>Candidato creato</p>
+                      <span>da Luca R. oggi alle 9:15</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="profile-aside">
+                <h3>Rendimento</h3>
+                <div class="donut">
+                  <div class="donut-chart"></div>
+                  <ul>
+                    <li><span class="dot blue"></span>Indeed 53%</li>
+                    <li><span class="dot orange"></span>LinkedIn 24%</li>
+                    <li><span class="dot green"></span>Altri portali 13%</li>
+                    <li><span class="dot gray"></span>Email direct 7%</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
